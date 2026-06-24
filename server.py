@@ -2,7 +2,8 @@ from flask import Flask, render_template
 import sqlite3
 import os
 
-app = Flask(__name__, template_folder='src/templates')
+app = Flask(__name__, template_folder='templates')
+
 
 @app.route('/')
 def home():
@@ -31,21 +32,28 @@ def home():
     total_cost = 0.0
     
     # 3. Apply the yield string volume logic matrices
+    # 3. Apply the yield string volume logic matrices
     for row in rows:
         description, qty, pack_size, case_price, yield_factor = row
         try:
-            raw_pack = pack_size.split()
-            if '/' in raw_pack:
-                case_count, unit_size = raw_pack.split('/')
-                total_units = float(case_count) * float(unit_size)
+            # Keep pack_size as a clean string to look for fractions
+            pack_str = str(pack_size).strip()
+            
+            if '/' in pack_str:
+                case_count, unit_size = pack_str.split('/')
+                # Remove any trailing letters like 'LB' or 'QT' from the second number
+                unit_size_clean = unit_size.split()[0]
+                total_units = float(case_count) * float(unit_size_clean)
             else:
-                total_units = float(raw_pack)
+                # If there's no fraction, just grab the first number
+                total_units = float(pack_str.split()[0])
         except (ValueError, IndexError):
             total_units = 1.0
 
         item_cost = ((case_price / total_units) / yield_factor) * qty
         total_cost += item_cost
         ingredients_list.append({'description': description, 'qty': qty, 'cost': item_cost})
+
         
     conn.close()
     
