@@ -1,17 +1,16 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect
 import sqlite3
 import os
 
 app = Flask(__name__, template_folder='templates')
-
+DB_PATH = "data/menu_system.db"
 
 @app.route('/')
 def home():
-    db_path = "data/menu_system.db"
-    if not os.path.exists(db_path):
+    if not os.path.exists(DB_PATH):
         return "❌ Relational database file missing. Please run sync_data.py first."
 
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
     # 1. Fetch Salmon Plate metadata
@@ -32,20 +31,16 @@ def home():
     total_cost = 0.0
     
     # 3. Apply the yield string volume logic matrices
-    # 3. Apply the yield string volume logic matrices
     for row in rows:
         description, qty, pack_size, case_price, yield_factor = row
         try:
-            # Keep pack_size as a clean string to look for fractions
             pack_str = str(pack_size).strip()
             
             if '/' in pack_str:
                 case_count, unit_size = pack_str.split('/')
-                # Remove any trailing letters like 'LB' or 'QT' from the second number
                 unit_size_clean = unit_size.split()[0]
                 total_units = float(case_count) * float(unit_size_clean)
             else:
-                # If there's no fraction, just grab the first number
                 total_units = float(pack_str.split()[0])
         except (ValueError, IndexError):
             total_units = 1.0
@@ -53,7 +48,6 @@ def home():
         item_cost = ((case_price / total_units) / yield_factor) * qty
         total_cost += item_cost
         ingredients_list.append({'description': description, 'qty': qty, 'cost': item_cost})
-
         
     conn.close()
     
@@ -66,6 +60,32 @@ def home():
     }
     
     return render_template('index.html', recipe_name="Pan Seared Salmon Plate", ingredients=ingredients_list, metrics=metrics)
+
+@app.route('/add-ingredient', methods=['POST'])
+def add_ingredient():
+    # Capture incoming web data parameters
+    item_id = request.form['item_id']
+    description = request.form['description']
+    category = request.form['category']
+    vendor = request.form['vendor']
+    pack_size = request.form['pack_size']
+    case_price = float(request.form['case_price'])
+    uom = request.form['uom']
+    yield_factor = float(request.form['yield_factor'])
+
+    # Write input metrics straight into your tracking tables
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT OR REPLACE INTO inventory (Item_ID, Description, Category, Vendor, Pack_Size, Case_Price, Unit_of_Measure, Yield_Factor)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (item_id, description, category, vendor, pack_size, case_price, uom, yield_factor))
+    
+    conn.commit()
+    conn.close()
+    
+    # Clean redirect straight back to homepage panel
+    return redirect('/')
 
 if __name__ == '__main__':
     app.run(debug=True)
