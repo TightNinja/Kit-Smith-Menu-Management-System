@@ -48,7 +48,8 @@
                 </div>
                 <div class="bg-gray-900/50 border border-gray-700/50 rounded-lg p-4 text-center">
                     <p class="text-xs text-gray-400 uppercase font-semibold">Cost Target</p>
-                    <p class="text-xl font-bold text-blue-400 mt-1 font-mono">{{ metrics.target_pct * 100 }}%</p>
+                    <p class="text-xl font-bold text-blue-400 mt-1 font-mono">{{ (metrics.target_pct * 100) | int }}%</p>
+
                 </div>
                 <div class="bg-gray-900/50 border border-gray-700/50 rounded-lg p-4 text-center">
                     <p class="text-xs text-gray-400 uppercase font-semibold">Suggested Retail</p>
