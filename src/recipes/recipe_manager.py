@@ -1,60 +1,76 @@
-import pandas as pd
+import sqlite3
 import os
 
-def calculate_recipe_cost(recipe_name, ingredients_list, target_food_cost_pct=0.30):
-    """
-    Calculates total plate cost and engineering price recommendations.
-    target_food_cost_pct: e.g., 0.30 for a 30% target food cost.
-    """
-    inventory_path = "data/mock_vendor_prices.xlsx"
-    if not os.path.exists(inventory_path):
-        print("❌ Inventory database not found.")
+def load_recipe_from_db(search_recipe_name):
+    db_path = "data/menu_system.db"
+    if not os.path.exists(db_path):
+        print("❌ Error: Relational system database not found.")
         return
 
-    df = pd.read_excel(inventory_path)
-    total_recipe_cost = 0.0
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
     
-    print("\n" + "="*55)
-    print(f" RECIPE CARD: {recipe_name.upper()}")
-    print("="*55)
-    print(f"{'Ingredient':<30} | {'Qty':<6} | {'Cost':<7}")
-    print("-" * 55)
+    # 1. Fetch Master Recipe Core Details
+    cursor.execute("SELECT recipe_id, target_cost_pct FROM recipes WHERE recipe_name = ?", (search_recipe_name,))
+    recipe_meta = cursor.fetchone()
+    
+    if not recipe_meta:
+        print(f"❌ Error: Recipe '{search_recipe_name}' not found in relational database.")
+        conn.close()
+        return
+        
+    recipe_id, target_food_cost_pct = recipe_meta
 
-    for item_id, qty in ingredients_list:
-        matched_row = df[df['Item_ID'] == item_id]
-        if not matched_row.empty:
-            row = matched_row.iloc[0]
-            
-            raw_pack = row['Pack_Size'].split()[0]
-            if '/' in raw_pack:
-                case_count, unit_size = raw_pack.split('/')
+    # 2. Run a 3-Table SQL JOIN to map out the production cost variables automatically
+    query = """
+        SELECT i.Description, ri.quantity, i.Pack_Size, i.Case_Price, i.Unit_of_Measure, i.Yield_Factor, i.Vendor
+        FROM recipe_ingredients ri
+        JOIN inventory i ON ri.item_id = i.Item_ID
+        WHERE ri.recipe_id = ?
+    """
+    cursor.execute(query, (recipe_id,))
+    ingredients_rows = cursor.fetchall()
+    
+    total_recipe_cost = 0.0
+    print("\n" + "="*58)
+    print(f"  SQL Relational Engine Card: {search_recipe_name.upper()}")
+    print("="*58)
+    print(f"{'Ingredient':<30} | {'Qty':<6} | {'Cost':<7}")
+    print("-" * 58)
+
+    # 3. Dynamic Calculation Loop
+    for row in ingredients_rows:
+        description, qty, pack_size, case_price, uom, yield_factor, vendor = row
+        
+        try:
+            raw_pack = pack_size.split()
+            if '/' in raw_pack[0]:
+                case_count, unit_size = raw_pack[0].split('/')
                 total_units = float(case_count) * float(unit_size)
             else:
-                total_units = float(raw_pack)
-                
-            true_unit_cost = (row['Case_Price'] / total_units) / row['Yield_Factor']
-            item_cost = true_unit_cost * qty
-            total_recipe_cost += item_cost
-            
-            print(f"🔹 {row['Description'][:28]:<28} | {qty:<6} | ${item_cost:.2f}")
+                total_units = float(raw_pack[0])
+        except (ValueError, IndexError):
+            total_units = 1.0
 
-    # Financial Menu Engineering Calculations
+        true_unit_cost = (case_price / total_units) / yield_factor
+        item_cost = true_unit_cost * qty
+        total_recipe_cost += item_cost
+        
+        print(f"🔹 {description[:28]:<28} | {qty:<6} | ${item_cost:.2f}")
+
+    # Financial Matrix Formulas
     suggested_retail = total_recipe_cost / target_food_cost_pct
     gross_profit_margin = suggested_retail - total_recipe_cost
 
-    print("-" * 55)
-    print(f"💵 TOTAL PLATE PRODUCTION COST:            ${total_recipe_cost:.2f}")
+    print("-" * 58)
+    print(f"💵 TOTAL SQL PRODUCTION COST:              ${total_recipe_cost:.2f}")
     print(f"🎯 TARGET FOOD COST PERCENTAGE:           {target_food_cost_pct * 100:.0f}%")
     print(f"🚀 SUGGESTED MENU RETAIL PRICE:           ${suggested_retail:.2f}")
     print(f"📈 PROJECTED GROSS PROFIT PER PLATE:       ${gross_profit_margin:.2f}")
-    print("="*55)
+    print("="*58)
+
+    conn.close()
 
 if __name__ == "__main__":
-    salmon_plate = [
-        ('INV-003', 0.5),   # 0.5 LB Salmon Fillet
-        ('INV-004', 0.75),  # 0.75 LB Yukon Gold Potatoes
-        ('INV-007', 0.12),  # 0.12 LB Unsalted Butter
-        ('INV-008', 0.05)   # 0.05 GAL Olive Oil
-    ]
-    # Evaluate salmon plate targeting a strict 28% food cost threshold
-    calculate_recipe_cost("Pan Seared Salmon Plate", salmon_plate, target_food_cost_pct=0.28)
+    # Query your relational database by name string
+    load_recipe_from_db("Pan Seared Salmon Plate")
