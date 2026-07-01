@@ -15,11 +15,14 @@ def home():
     
     # 1. Fetch Salmon Plate metadata
     cursor.execute("SELECT recipe_id, target_cost_pct FROM recipes WHERE recipe_name = 'Pan Seared Salmon Plate'")
-    recipe_id, target_cost_pct = cursor.fetchone()
+    recipe_meta = cursor.fetchone()
+    if not recipe_meta:
+        return "❌ Recipe 'Pan Seared Salmon Plate' not found in database. Run sync_data.py."
+    recipe_id, target_cost_pct = recipe_meta
     
-    # 2. Extract mapped ingredients using a SQL JOIN
+    # 2. Extract mapped ingredients including Item_ID using a SQL JOIN
     query = """
-        SELECT i.Description, ri.quantity, i.Pack_Size, i.Case_Price, i.Yield_Factor
+        SELECT i.Item_ID, i.Description, ri.quantity, i.Pack_Size, i.Case_Price, i.Yield_Factor
         FROM recipe_ingredients ri
         JOIN inventory i ON ri.item_id = i.Item_ID
         WHERE ri.recipe_id = ?
@@ -32,12 +35,13 @@ def home():
     
     # 3. Apply the yield string volume logic matrices
     for row in rows:
-        description, qty, pack_size, case_price, yield_factor = row
+        item_id, description, qty, pack_size, case_price, yield_factor = row
         try:
             pack_str = str(pack_size).strip()
             
             if '/' in pack_str:
                 case_count, unit_size = pack_str.split('/')
+                # Fix: Add [0] to grab the first word string out of the split list
                 unit_size_clean = unit_size.split()[0]
                 total_units = float(case_count) * float(unit_size_clean)
             else:
@@ -47,7 +51,7 @@ def home():
 
         item_cost = ((case_price / total_units) / yield_factor) * qty
         total_cost += item_cost
-        ingredients_list.append({'description': description, 'qty': qty, 'cost': item_cost})
+        ingredients_list.append({'id': item_id, 'description': description, 'qty': qty, 'cost': item_cost})
         
     conn.close()
     
@@ -55,15 +59,14 @@ def home():
     metrics = {
         'total_cost': total_cost,
         'target_pct': target_cost_pct,
-        'retail_price': total_cost / target_cost_pct,
-        'profit': (total_cost / target_cost_pct) - total_cost
+        'retail_price': total_cost / target_cost_pct if target_cost_pct else total_cost,
+        'profit': ((total_cost / target_cost_pct) - total_cost) if target_cost_pct else 0.0
     }
     
     return render_template('index.html', recipe_name="Pan Seared Salmon Plate", ingredients=ingredients_list, metrics=metrics)
 
 @app.route('/add-ingredient', methods=['POST'])
 def add_ingredient():
-    # Capture incoming web data parameters
     item_id = request.form['item_id']
     description = request.form['description']
     category = request.form['category']
@@ -73,7 +76,6 @@ def add_ingredient():
     uom = request.form['uom']
     yield_factor = float(request.form['yield_factor'])
 
-    # Write input metrics straight into your tracking tables
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('''
@@ -83,8 +85,19 @@ def add_ingredient():
     
     conn.commit()
     conn.close()
+    return redirect('/')
+
+@app.route('/delete-ingredient/<string:item_id>', methods=['POST'])
+def delete_ingredient(item_id):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
     
-    # Clean redirect straight back to homepage panel
+    # Clean relational mapping hooks out of link tables first, then remove inventory entry rows
+    cursor.execute("DELETE FROM recipe_ingredients WHERE item_id = ?", (item_id,))
+    cursor.execute("DELETE FROM inventory WHERE Item_ID = ?", (item_id,))
+    
+    conn.commit()
+    conn.close()
     return redirect('/')
 
 if __name__ == '__main__':
