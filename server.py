@@ -5,6 +5,9 @@ import os
 app = Flask(__name__, template_folder='templates')
 DB_PATH = "data/menu_system.db"
 
+# Global fallback string block to preserve view memory
+ACTIVE_RECIPE = ["Pan Seared Salmon Plate"]
+
 @app.route('/')
 def home():
     if not os.path.exists(DB_PATH):
@@ -13,16 +16,33 @@ def home():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     
-    # 1. Fetch Salmon Plate metadata
-    cursor.execute("SELECT recipe_id, target_cost_pct FROM recipes WHERE recipe_name = 'Pan Seared Salmon Plate'")
+    # A. Fixed: Maps r[0] to id and r[1] to name strings
+    cursor.execute("SELECT recipe_id, recipe_name FROM recipes")
+    all_rec_rows = cursor.fetchall()
+    all_recipes = [{'id': r[0], 'name': r[1]} for r in all_rec_rows]
+
+    # B. Fixed: Maps i[0] to id and i[1] to desc strings
+    cursor.execute("SELECT Item_ID, Description FROM inventory")
+    all_inv_rows = cursor.fetchall()
+    all_inventory = [{'id': i[0], 'desc': i[1]} for i in all_inv_rows]
+
+
+    # C. Track targeted viewing state layout properties
+    target_name = ACTIVE_RECIPE[0]
+    cursor.execute("SELECT recipe_id, target_cost_pct FROM recipes WHERE recipe_name = ?", (target_name,))
     recipe_meta = cursor.fetchone()
+    
     if not recipe_meta:
-        return "❌ Recipe 'Pan Seared Salmon Plate' not found in database. Run sync_data.py."
+        target_name = all_recipes[0]['name'] if all_recipes else "Pan Seared Salmon Plate"
+        ACTIVE_RECIPE[0] = target_name
+        cursor.execute("SELECT recipe_id, target_cost_pct FROM recipes WHERE recipe_name = ?", (target_name,))
+        recipe_meta = cursor.fetchone()
+        
     recipe_id, target_cost_pct = recipe_meta
     
-    # 2. Extract mapped ingredients including Item_ID using a SQL JOIN
+    # D. Extract mapped ingredients using a SQL JOIN
     query = """
-        SELECT i.Item_ID, i.Description, ri.quantity, i.Pack_Size, i.Case_Price, i.Yield_Factor
+        SELECT i.Item_ID, i.Description, ri.quantity, i.Pack_Size, i.Case_Price, i.Yield_Factor, i.Unit_of_Measure
         FROM recipe_ingredients ri
         JOIN inventory i ON ri.item_id = i.Item_ID
         WHERE ri.recipe_id = ?
@@ -33,15 +53,12 @@ def home():
     ingredients_list = []
     total_cost = 0.0
     
-    # 3. Apply the yield string volume logic matrices
     for row in rows:
-        item_id, description, qty, pack_size, case_price, yield_factor = row
+        item_id, description, qty, pack_size, case_price, yield_factor, uom = row
         try:
             pack_str = str(pack_size).strip()
-            
             if '/' in pack_str:
                 case_count, unit_size = pack_str.split('/')
-                # Fix: Add [0] to grab the first word string out of the split list
                 unit_size_clean = unit_size.split()[0]
                 total_units = float(case_count) * float(unit_size_clean)
             else:
@@ -51,11 +68,10 @@ def home():
 
         item_cost = ((case_price / total_units) / yield_factor) * qty
         total_cost += item_cost
-        ingredients_list.append({'id': item_id, 'description': description, 'qty': qty, 'cost': item_cost})
+        ingredients_list.append({'id': item_id, 'description': description, 'qty': qty, 'cost': item_cost, 'uom': uom})
         
     conn.close()
     
-    # 4. Compile layout dictionary analytics
     metrics = {
         'total_cost': total_cost,
         'target_pct': target_cost_pct,
@@ -63,7 +79,50 @@ def home():
         'profit': ((total_cost / target_cost_pct) - total_cost) if target_cost_pct else 0.0
     }
     
-    return render_template('index.html', recipe_name="Pan Seared Salmon Plate", ingredients=ingredients_list, metrics=metrics)
+    return render_template('index.html', recipe_name=target_name, ingredients=ingredients_list, 
+                           metrics=metrics, all_recipes=all_recipes, all_inventory=all_inventory)
+
+@app.route('/select-recipe', methods=['POST'])
+def select_recipe():
+    recipe_id = request.form['selected_recipe_id']
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT recipe_name FROM recipes WHERE recipe_id = ?", (recipe_id,))
+    res = cursor.fetchone()
+    if res:
+        ACTIVE_RECIPE[0] = res[0]
+    conn.close()
+    return redirect('/')
+
+@app.route('/create-blank-recipe', methods=['POST'])
+def create_blank_recipe():
+    new_name = request.form['new_recipe_name'].strip()
+    if new_name:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("INSERT OR IGNORE INTO recipes (recipe_name, target_cost_pct) VALUES (?, 0.30)", (new_name,))
+        conn.commit()
+        conn.close()
+        ACTIVE_RECIPE[0] = new_name
+    return redirect('/')
+
+@app.route('/add-recipe-ingredient', methods=['POST'])
+def add_recipe_ingredient():
+    recipe_id = int(request.form['recipe_id'])
+    item_id = request.form['item_id']
+    quantity = float(request.form['quantity'])
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('INSERT INTO recipe_ingredients (recipe_id, item_id, quantity) VALUES (?, ?, ?)', (recipe_id, item_id, quantity))
+    conn.commit()
+    
+    cursor.execute("SELECT recipe_name FROM recipes WHERE recipe_id = ?", (recipe_id,))
+    res = cursor.fetchone()
+    if res:
+        ACTIVE_RECIPE[0] = res[0]
+    conn.close()
+    return redirect('/')
 
 @app.route('/add-ingredient', methods=['POST'])
 def add_ingredient():
@@ -82,7 +141,6 @@ def add_ingredient():
         INSERT OR REPLACE INTO inventory (Item_ID, Description, Category, Vendor, Pack_Size, Case_Price, Unit_of_Measure, Yield_Factor)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ''', (item_id, description, category, vendor, pack_size, case_price, uom, yield_factor))
-    
     conn.commit()
     conn.close()
     return redirect('/')
@@ -91,11 +149,9 @@ def add_ingredient():
 def delete_ingredient(item_id):
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    
-    # Clean relational mapping hooks out of link tables first, then remove inventory entry rows
-    cursor.execute("DELETE FROM recipe_ingredients WHERE item_id = ?", (item_id,))
-    cursor.execute("DELETE FROM inventory WHERE Item_ID = ?", (item_id,))
-    
+    cursor.execute("SELECT recipe_id FROM recipes WHERE recipe_name = ?", (ACTIVE_RECIPE[0],))
+    recipe_id = cursor.fetchone()[0]
+    cursor.execute("DELETE FROM recipe_ingredients WHERE recipe_id = ? AND item_id = ?", (recipe_id, item_id))
     conn.commit()
     conn.close()
     return redirect('/')
