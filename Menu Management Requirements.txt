@@ -1,0 +1,165 @@
+Column1	Column2	Column3	Column4	Column5	Column6	Column7
+	Item Maintenance					
+1	Implement Enterprise item master database	M				
+2	Single source of truth for all item attributes	M				
+3	Implement  Multiple UPCs per item	M				
+4	Implement PLU management for produce	M				
+5	Ability to Vendor item cross-references	M				
+6	Department/category/subcategory hierarchy	M				
+7	Implement Multiple pack sizes per item	M				
+8	System has the ability to have Multiple unit of measure per item	M				
+9	Implement Effective-dated pricing per item	M				
+10	Implement Cost history tracking per item	M				
+11	Margin calculation support	M				
+12	Item Maintenance ? Update and Deletion	M				
+13	Item Maintenance ? Recipe and Vendor Links	M				
+	Recipe Maintenance					
+14	Implement the centralized recipe database	M				
+15	Implement Ingredient-to-recipe relationship management	M				
+16	System has collaborative recipe creation Template/Function	D				
+17	Implement Recipe version control	D				
+18	Implement recipe scaling and yield calculations	M				
+19	Implement Standardized production recipes	M				
+20	Implement Ingredient substitution management	M				
+21	Implement recipe costing integration	M				
+22	Implement batch recipe management	M				
+23	Implement scaled recipe printing	M				
+24						
+	Nutrition & Allergen Management					
+25	Implement automated nutrition analysis	M				
+26	Systems supports Top 9 allergen management	M				
+27	"Systems supports Dietary label management (Vegan, Vegetarian, Halal, Kosher, Gluten-Free)"	M				
+28	Implement Ingredient-level allergen tracking	M				
+29	Implement Nutrition facts label generation	M				
+30	Implement Recipe nutrition updates from ingredient changes	M				
+31	Implement Student-facing allergen filtering	M				
+32	Implement ADA-accessible nutrition display	M				
+33						
+	Service Menus					
+34	Implement Multi-location menu cycle planning	M				
+35	Implement Master menu templates	D				
+36	Implement automated inventory depletion from menu and service	M				
+37	Implement automated Menu Forecasting based on Post Service Actuals	M				
+38	Implement Forecast-driven ingredient demand planning	M				
+39	Implement Web menu publishing	M				
+40	Implement Future effective-date menu changes					
+41	Implement Menu version control	D				
+42	Implement Menu approval workflow	D				
+43	Implement Menu consistency management and alternate cycles across locations	D				
+44	Implement Concept / Station based menu planning	M				
+	Vendor Order and Maintenance					
+45	Implement automated purchase order generation	M				
+46	Implement vendor order management	M				
+47	Implement electronic invoice processing	M				
+48	Implement purchase order approval workflows	M				
+49	Implement vendor cost management	M				
+50	Implement multi-vendor purchasing from service menus	M				
+51	Implement suggested ordering quantities from serive menu forecast	M				
+52	Implement Vendor master management	M				
+53	Implement Multiple vendors per item	M				
+54	Implement Vendor contract tracking	D				
+55	Implement item purchase lead-time management	M				
+56	Implement Vendor performance reporting and scorecards	M				
+57	Implement vendor pricing comparisons	M				
+58	Implement vendor scorecards	M				
+59	Implement Vendor rebate management	M				
+	Kitchen Production Management					
+60	Implement automated production sheets based on service menus	M				
+61	Implement Production Waste tracking	M				
+62	Implement unit prep lists based on total aggregate unit production	M				
+63	Implement Batch recipes	M				
+64	Implement production Forecasting	M				
+65	Implement Production scaling	M				
+66	Implement Ingredient requirements	M				
+67	Implement Production status tracking	M				
+68	Implement Waste tracking                                                                                              	M				
+69	Implement Waste tracking support	M				
+70	Implement ingredient requirement calculations	M				
+71	Implement production scaling based on forecast demand	M				
+						
+	Residential Point of Sale					
+72	Implement Student meal plan acceptance					
+73	Implement Campus card integration					
+74	Implement Declining balance accounts					
+75	Implement Meal Swipes and equivalencies					
+76	"Implement Multiple Payment types (Google, Apple, Credit, Cash, Gift)"					
+77	Implement Loyalty Account Maintenance					
+78	Implement Catering Intergration					
+79	Implement Retail Intergration 					
+80	Implement Retail Intergration 					
+	Digital Signage 					
+81	Implement Mobile menu access					
+82	Implement Responsive web menus					
+83	Implement Menu search functionality					
+84	Implement Dietary preference filtering					
+85	Implement Allergen filtering					
+86	Implement Location-specific menu display					
+87	Implement Real-time menu updates					
+88	Implement Digital menu board publishing					
+89	Implement QR code menu access					
+	Web and Mobile Ordering					
+90	Implement Mobile app purchasing	M				
+91	Implement mobile app nutrion and dietray information	M				
+92	Implement nutrion and allergen search features	M				
+93	Implement Dietary preference filtering	M				
+94	Implement Allergen filtering	M				
+95	Implement customer communication and messaging	M				
+96	"Implement real-time menu updates (menu changes, out of stock)"	M				
+97	Implement digital menu board publishing	M				
+98	Implement QR code menu access	D				
+	Waste and Sustainability					
+99	Implement 	M				
+100	Implement Post Production Waste tracking	M				
+101	Implement Shrink tracking	M				
+102	Implement Spoilage tracking	M				
+103	Implement Lot tracking	D				
+	Inventory Maintenance					
+104	"Implement Offline Mobile Inventory Sync & Count - (handheld, tablet etc)"	M				
+105	Implement Inventory updates from POS transactions (perpetual inventory)	M				
+106	Implement Inventory adjustments	M				
+107	Implement Inventory transfers	M				
+108	Implement Cycle count management	M				
+109	Implement Full physical inventory support	M				
+110	Implement Inventory variance reporting	M				
+111	Implement On-hand inventory visibility	M				
+112	Implement Store-level inventory visibility	M				
+113	Implement Multi Unit inventory visibility	M				
+114	Implement Equipment Inventory and Tagging	D				
+	System Reports and Maintenance					
+115	"Implement Back Office Access Level Permission (read only, user, manager, admin etc)"	M				
+116	"Implement Food Cost / Spend Analytics (by - item, recipe, location, menu, time period) reports"	M				
+117	"Implement Labor Cost / Spend Analytics (by - postion, hours, station, unit, time period)"	M				
+118	"Implement  Revenue and Profit  Analytics (sales per - meal, location, labor hour, count, transacation) reports"	M				
+119	Implement Inventory status and maintenance reports	M				
+120	Implement Theoretical vs actual inventory variance reports	M				
+121	"Implement  Waste analysis reports (by - menu, station, unit, time period etc)"	M				
+122	"Implement Menu Analytic gvt56d    (item/menu by type,  category, dietary trait, nutrition, station, unit, time period etc) reports"	M				
+123	Implement Post Service actuals reports	M				
+124	Implement vendor spend reports	M				
+125	Implement User Audit trail reporting	M				
+126	Implement Quarterly / Annual Budgeting Tools	M				
+127	"Implement Smart System prompts (high food cost, overspend, high inventory variance)"	M				
+128	Discuss systems functionality to create Custom reports	M				
+129	Discuss systems functionality to create dashboards	D				
+	Integrations					
+130	" Implement a system that imports and exports data to PDF, Excel, Power BI and Tableau"	M				
+131	Implement intergrates with a Point of Sale solution	M				
+132	Implement intergrates with a Digital Signage solution	D				
+133	Implement intergrates with a Mobile Ordering solution	D				
+134	Implement utilizes vendor orders an maintenance through EDI	M				
+135	Implement intergrates with a Campus Card solution	D				
+136	Implement intergrates with a Finance/General Ledger system (Workday)	M				
+137	Implement intergrates with a client Data Warehouse	M				
+138	Implement operates via Cloud. How do we access our data?	D				
+139	Implement operates On Premise	M				
+140	"Implement directly updates items, receipes and menus via import/export?"	M				
+						
+						
+						
+						
+						
+						
+						
+						
+						
+						
