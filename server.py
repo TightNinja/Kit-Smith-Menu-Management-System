@@ -1,8 +1,11 @@
 from flask import Flask, render_template, request, redirect
 import sqlite3
 import os
+from src.items.routes import items_bp
 
 app = Flask(__name__, template_folder='templates')
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-only-change-me')
+app.register_blueprint(items_bp)
 DB_PATH = "data/menu_system.db"
 
 # Global fallback string block to preserve view memory
