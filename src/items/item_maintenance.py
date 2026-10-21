@@ -1,3 +1,4 @@
+import os
 """Item Maintenance (requirements 1-13).
 
 `inventory` remains the enterprise item master (single source of truth for item
@@ -7,7 +8,7 @@ by Item_ID without hard FKs because sync_data.py rebuilds `inventory`.
 import sqlite3
 from datetime import date
 
-DB_PATH = "data/menu_system.db"
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "data", "menu_system.db")
 
 SCHEMA = [
     '''CREATE TABLE IF NOT EXISTS item_hierarchy (

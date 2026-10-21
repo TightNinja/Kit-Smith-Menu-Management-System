@@ -3,10 +3,11 @@ import sqlite3
 import os
 from src.items.routes import items_bp
 
-app = Flask(__name__, template_folder='templates')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app = Flask(__name__, template_folder=os.path.join(BASE_DIR, 'templates'))
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-only-change-me')
 app.register_blueprint(items_bp)
-DB_PATH = "data/menu_system.db"
+DB_PATH = os.path.join(BASE_DIR, "data", "menu_system.db")
 
 # Global fallback string block to preserve view memory
 ACTIVE_RECIPE = ["Pan Seared Salmon Plate"]
@@ -174,4 +175,4 @@ def delete_ingredient(item_id):
     return redirect('/recipes')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='127.0.0.1', port=5000, debug=True)
