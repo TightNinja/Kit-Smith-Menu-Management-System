@@ -1,14 +1,31 @@
 from flask import Flask, render_template, request, redirect
 import sqlite3
 import os
+from src.items.routes import items_bp
 
 app = Flask(__name__, template_folder='templates')
+app.secret_key = os.environ.get('SECRET_KEY', 'dev-only-change-me')
+app.register_blueprint(items_bp)
 DB_PATH = "data/menu_system.db"
 
 # Global fallback string block to preserve view memory
 ACTIVE_RECIPE = ["Pan Seared Salmon Plate"]
 
 @app.route('/')
+def main_menu():
+    return render_template('menu.html')
+
+@app.route('/purchasing')
+def purchasing():
+    return render_template('placeholder.html', title='Purchasing',
+                           blurb='Vendor orders, purchase order generation and approvals, invoices and vendor cost management.')
+
+@app.route('/inventory')
+def inventory():
+    return render_template('placeholder.html', title='Inventory',
+                           blurb='On-hand visibility, adjustments, transfers, cycle counts and variance reporting.')
+
+@app.route('/recipes')
 def home():
     if not os.path.exists(DB_PATH):
         return "❌ Relational database file missing. Please run sync_data.py first."
@@ -92,7 +109,7 @@ def select_recipe():
     if res:
         ACTIVE_RECIPE[0] = res[0]
     conn.close()
-    return redirect('/')
+    return redirect('/recipes')
 
 @app.route('/create-blank-recipe', methods=['POST'])
 def create_blank_recipe():
@@ -104,7 +121,7 @@ def create_blank_recipe():
         conn.commit()
         conn.close()
         ACTIVE_RECIPE[0] = new_name
-    return redirect('/')
+    return redirect('/recipes')
 
 @app.route('/add-recipe-ingredient', methods=['POST'])
 def add_recipe_ingredient():
@@ -122,7 +139,7 @@ def add_recipe_ingredient():
     if res:
         ACTIVE_RECIPE[0] = res[0]
     conn.close()
-    return redirect('/')
+    return redirect('/recipes')
 
 @app.route('/add-ingredient', methods=['POST'])
 def add_ingredient():
@@ -143,7 +160,7 @@ def add_ingredient():
     ''', (item_id, description, category, vendor, pack_size, case_price, uom, yield_factor))
     conn.commit()
     conn.close()
-    return redirect('/')
+    return redirect('/recipes')
 
 @app.route('/delete-ingredient/<string:item_id>', methods=['POST'])
 def delete_ingredient(item_id):
@@ -154,7 +171,7 @@ def delete_ingredient(item_id):
     cursor.execute("DELETE FROM recipe_ingredients WHERE recipe_id = ? AND item_id = ?", (recipe_id, item_id))
     conn.commit()
     conn.close()
-    return redirect('/')
+    return redirect('/recipes')
 
 if __name__ == '__main__':
     app.run(debug=True)
